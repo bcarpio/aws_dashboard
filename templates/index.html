@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+<link href="static/bootstrap.css" rel="stylesheet" media="screen">
+<title>AWS Dashboard</title>
+</head>
+<body>
+<div class="container-fluid"><div class="navbar"><div class="navbar-inner"><div class="container"><a class="brand">Welcome to AWS Deploy Dashboard</a>
+    </div>
+    </div>
+	</div>
+	</div>
+
+{% for dict in list %}
+<div class="row-fluid">
+    <div class="span4 offset1" align="center">
+	<span class="label label-info">{{dict['region']}}</span></br>
+	<p>
+		<table class="table table-striped">
+		{% for zone in dict['zones'] %}
+		<tr>
+		<td>{{zone}}</td>
+		<td>
+		{% if zone.state == 'available' %} <button class="btn btn-mini btn-primary" type="button">H</button>
+		{% else %}
+		<button class="btn btn-mini btn-danger" type="button">X</button>
+		{% endif %}
+		</td>
+		</tr>
+		{% endfor %}
+		</table>
+	</p>
+	</div>
+    <div class="span4 offset1" align="center">
+	<span class="label label-info">{{dict['region']}}</span>
+	<p>
+	<table class="table table-striped">
+	<tr style="font-weight:bold">
+	<td>Instances</td><td>EBS Volumes</td><td>Elastic IPs</td><td>Elastic LBs</td>
+	</tr>
+	<tr>
+	<td>{{dict['instance_count']}}</td>
+
+	<td>
+	{% if dict['unattached_ebs'] == 0 %}
+	<button class="btn btn-mini btn-primary" type="button">{{dict['ebscount']}}</button>
+	{% else %}
+	<button class="btn btn-mini btn-danger" type="button">{{dict['ebscount']}}</button>
+	{% endif %}
+	</td>
+
+	<td>
+	{% if dict['unattached_eli'] == 0 %}
+	<button class="btn btn-mini btn-primary" type="button">{{dict['eli_count']}}</button>
+	{% else %}
+	<button class="btn btn-mini btn-danger" type="button">{{dict['eli_count']}}</button>
+	{% endif %}
+
+	</td>
+
+	<td>{{dict['elb_count']}}</td>
+	</tr>
+	</table>
+	</div>
+</div>
+{% endfor %}
+</body>
+</html>
