@@ -30,13 +30,13 @@ def index():
 			if state == None:
 				unattached_ebs = unattached_ebs + 1
 
-		eli = conn.get_all_addresses()
-		eli_count = len(eli)
+		elis = conn.get_all_addresses()
+		eli_count = len(elis)
 		unattached_eli = 0
 
-		for eli in eli:
+		for eli in elis:
 			instance_id = eli.instance_id
-			if instance_id == None:
+			if not instance_id:
 				unattached_eli = unattached_eli + 1
 
 		connelb = boto.ec2.elb.connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
@@ -47,6 +47,32 @@ def index():
 
 	print list
 	return render_template('index.html',list=list)
+
+@app.route('/ebs_volumes/<region>/')
+def ebs_volumes(region=None):
+	creds = config.get_ec2_conf()
+	conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
+	ebs = conn.get_all_volumes()
+	ebs_vol = []	
+	for vol in ebs:
+		state = vol.attachment_state()
+		if state == None:
+			ebs_vol.append(vol.id)
+	return Response(json.dumps(ebs_vol), mimetype='application/json')
+			
+
+@app.route('/elastic_ips/<region>/')
+def elastic_ips(region=None):
+	creds = config.get_ec2_conf()
+	conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
+	elis = conn.get_all_addresses()
+	un_eli = []
+	for eli in elis:
+		instance_id = eli.instance_id
+		if not instance_id:
+			un_eli.append(eli.public_ip)
+	return Response(json.dumps(un_eli), mimetype='application/json')
+			
 
 if __name__ == '__main__':
 	app.debug = True
