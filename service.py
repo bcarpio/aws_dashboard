@@ -44,8 +44,6 @@ def index():
 		elb_count = len(elb)
 		list.append({ 'region' : region, 'zones': zones, 'instance_count' : instance_count, 'ebscount' : ebscount, 'unattached_ebs' : unattached_ebs, 'eli_count' : eli_count, 'unattached_eli' : unattached_eli, 'elb_count' : elb_count})
 		
-
-	print list
 	return render_template('index.html',list=list)
 
 @app.route('/ebs_volumes/<region>/')
@@ -57,10 +55,23 @@ def ebs_volumes(region=None):
 	for vol in ebs:
 		state = vol.attachment_state()
 		if state == None:
-			ebs_vol.append(vol.id)
-	return Response(json.dumps(ebs_vol), mimetype='application/json')
+			ebs_info = { 'id' : vol.id, 'size' : vol.size, 'iops' : vol.iops, 'status' : vol.status }
+			ebs_vol.append(ebs_info)
+	#return Response(json.dumps(ebs_vol), mimetype='application/json')
+	return render_template('ebs_volume.html',ebs_vol=ebs_vol,region=region)
 			
-
+@app.route('/ebs_volumes/<region>/delete/<vol_id>')
+def delete_ebs_vol(region=None,vol_id=None):
+	creds = config.get_ec2_conf()	
+	conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
+	vol_id = vol_id.encode('ascii')
+	vol_ids = conn.get_all_volumes(volume_ids=vol_id)
+	for vol in vol_ids:
+		result = []
+		r = vol.delete()
+		result.append(r)
+	return Response(json.dumps(result), mimetype='application/json')
+	
 @app.route('/elastic_ips/<region>/')
 def elastic_ips(region=None):
 	creds = config.get_ec2_conf()
@@ -70,10 +81,25 @@ def elastic_ips(region=None):
 	for eli in elis:
 		instance_id = eli.instance_id
 		if not instance_id:
-			un_eli.append(eli.public_ip)
-	return Response(json.dumps(un_eli), mimetype='application/json')
-			
+			eli_info = { 'public_ip' : eli.public_ip, 'domain' : eli.domain}
+			un_eli.append(eli_info)
+	#return Response(json.dumps(un_eli), mimetype='application/json')
+	return render_template('elastic_ip.html',un_eli=un_eli,region=region)
 
+@app.route('/elastic_ips/<region>/delete/<ip>')
+def delete_elastic_ip(region=None,ip=None):
+	creds = config.get_ec2_conf()
+	conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
+	ip = ip.encode('ascii')
+	elis = conn.get_all_addresses(addresses=ip)
+
+	for eli in elis:
+		result = []
+		r = eli.release()
+		result.append(r)
+	return Response(json.dumps(result), mimetype='application/json')
+
+			
 if __name__ == '__main__':
 	app.debug = True
 	app.run(host='0.0.0.0')
