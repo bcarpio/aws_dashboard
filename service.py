@@ -11,6 +11,7 @@ from boto.route53.record import ResourceRecordSets
 
 app = Flask(__name__)
 
+
 @app.route('/')
 def index():
 
@@ -20,10 +21,18 @@ def index():
 	for region in config.region_list():
 		conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
 		zones = conn.get_all_zones()	
-		instance_count = len(conn.get_all_instance_status())  
+		instances = conn.get_all_instance_status()
+		instance_count = len(instances)
 		ebs = conn.get_all_volumes()
 		ebscount = len(ebs)
 		unattached_ebs = 0
+		unattached_eli = 0
+		event_count = 0
+	
+		for instance in instances:
+			events = instance.events
+			if events:
+				event_count = event_count + 1	
 
 		for vol in ebs:
 			state = vol.attachment_state()
@@ -32,7 +41,7 @@ def index():
 
 		elis = conn.get_all_addresses()
 		eli_count = len(elis)
-		unattached_eli = 0
+
 
 		for eli in elis:
 			instance_id = eli.instance_id
@@ -42,7 +51,7 @@ def index():
 		connelb = boto.ec2.elb.connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
 		elb = connelb.get_all_load_balancers()
 		elb_count = len(elb)
-		list.append({ 'region' : region, 'zones': zones, 'instance_count' : instance_count, 'ebscount' : ebscount, 'unattached_ebs' : unattached_ebs, 'eli_count' : eli_count, 'unattached_eli' : unattached_eli, 'elb_count' : elb_count})
+		list.append({ 'region' : region, 'zones': zones, 'instance_count' : instance_count, 'ebscount' : ebscount, 'unattached_ebs' : unattached_ebs, 'eli_count' : eli_count, 'unattached_eli' : unattached_eli, 'elb_count' : elb_count, 'event_count' : event_count})
 		
 	return render_template('index.html',list=list)
 
@@ -99,6 +108,18 @@ def delete_elastic_ip(region=None,ip=None):
 		result.append(r)
 	return Response(json.dumps(result), mimetype='application/json')
 
+@app.route('/instance_events/<region>/')
+def instance_events(region=None):
+	creds = config.get_ec2_conf()
+	conn = connect_to_region(region, aws_access_key_id=creds['AWS_ACCESS_KEY_ID'], aws_secret_access_key=creds['AWS_SECRET_ACCESS_KEY'])
+	instances = conn.get_all_instance_status()
+	instance_event_list = []
+	for instance in instances:
+		event = instance.events
+		if event:
+			event_info = { 'instance_id' : instance.id, 'event' : instance.event[0].code, 'description' : instance.event[0].description, 'event_before' : instance.event[0].not_before, 'event_after': instance.event[0].not_after }
+			instance_event_list.append(event_info)
+	return render_template('instance_events.html', instance_event_list=instance_event_list)
 			
 if __name__ == '__main__':
 	app.debug = True
