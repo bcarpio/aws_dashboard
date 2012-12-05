@@ -1,12 +1,9 @@
 from flask import Flask, flash, abort, redirect, url_for, request, render_template, make_response, json, Response
-from fabric.api import *
-from fabric.operations import local,put
 import os, sys
 import config
 import boto.ec2.elb
 import boto
 from boto.ec2 import *
-from boto.route53.record import ResourceRecordSets
 
 
 app = Flask(__name__)
