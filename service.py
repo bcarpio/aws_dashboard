@@ -109,7 +109,7 @@ def instance_events(region=None):
 	for instance in instances:
 		event = instance.events
 		if event:
-			event_info = { 'instance_id' : instance.id, 'event' : instance.event[0].code, 'description' : instance.event[0].description, 'event_before' : instance.event[0].not_before, 'event_after': instance.event[0].not_after }
+			event_info = { 'instance_id' : instance.id, 'event' : instance.events[0].code, 'description' : instance.events[0].description, 'event_before' : instance.events[0].not_before, 'event_after': instance.events[0].not_after }
 			instance_event_list.append(event_info)
 	return render_template('instance_events.html', instance_event_list=instance_event_list)
 			
