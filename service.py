@@ -63,7 +63,6 @@ def ebs_volumes(region=None):
 		if state == None:
 			ebs_info = { 'id' : vol.id, 'size' : vol.size, 'iops' : vol.iops, 'status' : vol.status }
 			ebs_vol.append(ebs_info)
-	#return Response(json.dumps(ebs_vol), mimetype='application/json')
 	return render_template('ebs_volume.html',ebs_vol=ebs_vol,region=region)
 			
 @app.route('/ebs_volumes/<region>/delete/<vol_id>')
@@ -73,10 +72,8 @@ def delete_ebs_vol(region=None,vol_id=None):
 	vol_id = vol_id.encode('ascii')
 	vol_ids = conn.get_all_volumes(volume_ids=vol_id)
 	for vol in vol_ids:
-		result = []
-		r = vol.delete()
-		result.append(r)
-	return Response(json.dumps(result), mimetype='application/json')
+		vol.delete()
+	return redirect(url_for('ebs_volumes', region=region))
 	
 @app.route('/elastic_ips/<region>/')
 def elastic_ips(region=None):
@@ -89,7 +86,6 @@ def elastic_ips(region=None):
 		if not instance_id:
 			eli_info = { 'public_ip' : eli.public_ip, 'domain' : eli.domain}
 			un_eli.append(eli_info)
-	#return Response(json.dumps(un_eli), mimetype='application/json')
 	return render_template('elastic_ip.html',un_eli=un_eli,region=region)
 
 @app.route('/elastic_ips/<region>/delete/<ip>')
@@ -100,10 +96,9 @@ def delete_elastic_ip(region=None,ip=None):
 	elis = conn.get_all_addresses(addresses=ip)
 
 	for eli in elis:
-		result = []
-		r = eli.release()
-		result.append(r)
-	return Response(json.dumps(result), mimetype='application/json')
+		eli.release()
+	return redirect(url_for('elastic_ips', region=region))
+	
 
 @app.route('/instance_events/<region>/')
 def instance_events(region=None):
